@@ -1,4 +1,5 @@
 export * from './ColorModeSwitcher'
+export * from './CustomTextarea'
 export * from './DecryptionForm'
 export * from './EncryptionForm'
 export * from './Footer'

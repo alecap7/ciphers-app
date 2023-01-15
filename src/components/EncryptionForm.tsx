@@ -1,12 +1,16 @@
 import React, { FunctionComponent } from 'react'
-import { Box, Button, FormControl, Text, Textarea } from '@primer/react'
+import { Box, Button, Checkbox, FormControl, Text } from '@primer/react'
 import { formatText, oneTimePadEncode } from '@alecap7/ciphers-js'
-import { download } from '../utils'
+import { download, randomString } from '../utils'
+import { CustomTextarea } from './CustomTextarea'
 
 export const EncryptionForm: FunctionComponent<any> = () => {
   const initialValues = {
     plainText: '',
-    secret: ''
+    secret: '',
+    showPlainText: true,
+    showSecret: true,
+    autogenerateSecret: false
   }
 
   const [values, setValues] = React.useReducer(
@@ -14,11 +18,26 @@ export const EncryptionForm: FunctionComponent<any> = () => {
     initialValues
   )
 
-  const { plainText, secret } = values
+  const { plainText, secret, showPlainText, showSecret, autogenerateSecret } = values
 
-  const handleChange: React.ChangeEventHandler<HTMLTextAreaElement> = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const { name, value } = event.target
-    setValues({ [name]: formatText(value) })
+  const handleChange: React.ChangeEventHandler<HTMLTextAreaElement | HTMLInputElement> = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    const { name, type } = event.target
+
+    if (type === 'textarea') {
+      const { value } = event.target
+      const formattedValue = formatText(value)
+
+      if (autogenerateSecret as boolean && name === 'plainText') {
+        setValues({ secret: randomString(formattedValue.length) })
+      }
+
+      setValues({ [name]: formattedValue })
+    }
+
+    if (type === 'checkbox') {
+      const { checked } = event.target as HTMLInputElement
+      setValues({ [name]: checked })
+    }
   }
 
   const submit = (): void => {
@@ -32,16 +51,32 @@ export const EncryptionForm: FunctionComponent<any> = () => {
   }
 
   return (
-        <Box display="grid" gridGap={6}>
-            <FormControl>
-                <FormControl.Label><Text color="fg.text">Plain Text</Text></FormControl.Label>
-                <Textarea name="plainText" sx={{ width: '100%' }} value={plainText} onChange={handleChange} />
-            </FormControl>
-            <FormControl>
-                <FormControl.Label><Text color="fg.text">Secret</Text></FormControl.Label>
-                <Textarea name="secret" sx={{ width: '100%' }} value={secret} onChange={handleChange} />
-            </FormControl>
-            <Button onClick={submit}>Encrypt</Button>
-        </Box>
+    <Box display='flex' flexDirection='column' justifyContent='space-between' height='100%'>
+      <FormControl>
+        <FormControl.Label><Text color="fg.text">Plain Text</Text></FormControl.Label>
+        <CustomTextarea name="plainText" sx={{ width: '100%' }} value={plainText} onChange={handleChange} showContent={showPlainText}/>
+      </FormControl>
+      <Box display={'flex'} justifyContent='space-between' margin='10px'>
+        <FormControl>
+          <Checkbox name="showPlainText" checked={showPlainText} onChange={handleChange}/>
+          <FormControl.Label>Show</FormControl.Label>
+        </FormControl>
+      </Box>
+      <FormControl>
+        <FormControl.Label><Text color="fg.text">Secret</Text></FormControl.Label>
+        <CustomTextarea name="secret" sx={{ width: '100%' }} value={secret} onChange={handleChange} showContent={showSecret} disabled={autogenerateSecret}/>
+      </FormControl>
+      <Box display={'flex'} justifyContent='space-between' margin='10px'>
+        <FormControl>
+          <Checkbox name="showSecret" checked={showSecret} onChange={handleChange}/>
+          <FormControl.Label>Show</FormControl.Label>
+        </FormControl>
+        <FormControl>
+          <Checkbox name="autogenerateSecret" checked={autogenerateSecret} onChange={handleChange}/>
+          <FormControl.Label>Autogenerate</FormControl.Label>
+        </FormControl>
+      </Box>
+      <Button onClick={submit}>Encrypt</Button>
+    </Box>
   )
 }
